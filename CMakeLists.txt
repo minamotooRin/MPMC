@@ -18,11 +18,17 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR: " ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-link_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs
-)
 
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/lib SRC_LIST)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_LIST)
 add_library(MPMC SHARED
     ${SRC_LIST}
 )
+
+IF (WIN32)
+	MESSAGE(STATUS "Now is windows")
+ELSEIF (APPLE)
+	MESSAGE(STATUS "Now is Apple systens.")
+ELSEIF (UNIX)
+	MESSAGE(STATUS "Now is UNIX-like OS's.")
+    target_link_libraries(MPMC pthread)
+ENDIF ()

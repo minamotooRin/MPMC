@@ -1,7 +1,5 @@
 #include "mpmc.h"
 
-using namespace std;
-
 ItemRepository::ItemRepository(size_t maxRepositorySize_) : maxRepositorySize(maxRepositorySize_)
 {
     produced_item_counter   = 0;
@@ -10,13 +8,13 @@ ItemRepository::ItemRepository(size_t maxRepositorySize_) : maxRepositorySize(ma
 
 int ItemRepository::putInItem(void * item)
 {
-    unique_lock<mutex> lock(mtx);
+    std::unique_lock<std::mutex> lock(mtx);
 
     while( maxRepositorySize > 0 && item_buffer.size() >= maxRepositorySize ) { 
         repo_not_full.wait(lock); // 获取不到则解锁lock等待，获取到了再lock住
     }
 
-    item_buffer.push(item);
+    item_buffer.emplace(item);
     produced_item_counter++;
 
     repo_not_empty.notify_all();
@@ -25,10 +23,10 @@ int ItemRepository::putInItem(void * item)
     return 0;
 }
 
-int ItemRepository::putInItems(const vector<void *> && items)
+int ItemRepository::putInItems(const std::vector<void *> && items)
 {
-    unique_lock<mutex> lock(mtx);
-    for(const void * item : items)
+    std::unique_lock<std::mutex> lock(mtx);
+    for(void * item : items)
     {
         while( maxRepositorySize > 0 && item_buffer.size() >= maxRepositorySize ) { 
             repo_not_full.wait(lock); // 获取不到则解锁lock等待，获取到了再lock住
@@ -46,7 +44,7 @@ int ItemRepository::putInItems(const vector<void *> && items)
 
 void * ItemRepository::consumeItem()
 {
-    unique_lock<mutex> lock(mtx);
+    std::unique_lock<std::mutex> lock(mtx);
     while(item_buffer.empty()) {
         repo_not_empty.wait(lock);
     }
@@ -61,16 +59,16 @@ void * ItemRepository::consumeItem()
     return data;
 }
 
-vector<void *> ItemRepository::consumeAllItems()
+std::vector<void *> ItemRepository::consumeAllItems()
 {
-    unique_lock<mutex> lock(mtx);
+    std::unique_lock<std::mutex> lock(mtx);
     while(item_buffer.empty()) {
         repo_not_empty.wait(lock);
     }
 
     consumed_item_counter += item_buffer.size();
 
-    vector<void * > datas;
+    std::vector<void * > datas;
     while(!item_buffer.empty())
     {
         datas.emplace_back(item_buffer.front());
@@ -85,6 +83,6 @@ vector<void *> ItemRepository::consumeAllItems()
 
 int ItemRepository::getItemCnt()
 {
-    lock_guard<mutex> lockGuard(mtx);
+    std::lock_guard<std::mutex> lockGuard(mtx);
     return item_buffer.size();
 }

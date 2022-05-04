@@ -5,20 +5,18 @@
 #include "CommonAct.h"
 #include "AllActs.h"
 
-using namespace std;
-
 template <typename T>
 class callableObj{
 public:
     callableObj(size_t threadCnt_ = 1):threadCnt(threadCnt_){}
-    inline ICommonAction * operator() (ThreadPool * pPool) const{
-        return new T(pPool, threadCnt);
+    inline ICommonAction * operator() (std::ThreadPool * pPool) const{
+        return new T(threadCnt, pPool);
     }
 
     size_t threadCnt;
 };
 
-static const map< COMMON_ACT_TYPE, vector< callableObj<ICommonScan> > > 
+static const std::map< COMMON_ACT_TYPE, std::vector< callableObj<ICommonScan> > > 
 task_2_actions = 
 {
     {COMMON_ACT_TYPE::EV_FILE_ACT_TYPE, 
@@ -36,15 +34,15 @@ task_2_actions =
     }
 };
 
-static const map<TASK_RESULT, string> result_2_description = 
+static const std::map<TASK_RESULT, std::string> result_2_description = 
 {
-    {TASK_RESULT::SUCCESS, string("success")},
-    {TASK_RESULT::FAILURE_STOP, string("task is stopped")},
-    {TASK_RESULT::FAILURE_MEMORY, string("out of memory")},
-    {TASK_RESULT::FAILURE_UNKNOW, string("unknow error")}
+    {TASK_RESULT::SUCCESS, std::string("success")},
+    {TASK_RESULT::FAILURE_STOP, std::string("task is stopped")},
+    {TASK_RESULT::FAILURE_MEMORY, std::string("out of memory")},
+    {TASK_RESULT::FAILURE_UNKNOW, std::string("unknow error")}
 };
 
-T_TaskResult::T_TaskResult(TASK_RESULT r = TASK_RESULT::SUCCESS) : result(r)
+T_TaskResult::T_TaskResult(TASK_RESULT r) : result(r)
 {
     const auto & iter = result_2_description.find(r);
     if(iter != result_2_description.end())
@@ -59,11 +57,16 @@ T_TaskResult::T_TaskResult(TASK_RESULT r = TASK_RESULT::SUCCESS) : result(r)
 
 */
 
-ICommonAction::ICommonAction(ThreadPool * pPool, size_t threadCnt_) : mPool(pPool), threadCnt(threadCnt_)
+ICommonAction::ICommonAction(size_t threadCnt_, std::ThreadPool * pPool) : threadCnt(threadCnt_), mPool(pPool)
 {
     nextAction  = nullptr;
     stopFlag    = false;
     depletFlag  = false;
+}
+
+ICommonAction::~ICommonAction()
+{
+    
 }
 
 int ICommonAction::queryProgress()
@@ -81,7 +84,7 @@ TASK_RESULT ICommonAction::run()
     for(int i = 0; i < threadCnt; ++i)
     {
         futs.emplace_back(
-            mPool->enqueue(
+            mPool->commit(
                 [this]{
                     while(true)
                     {
@@ -183,10 +186,10 @@ CommonActMgr::CommonActMgr(const COMMON_ACT_TYPE &iActType, const PID &pid, int 
             [&](const callableObj<ICommonScan> &act)
             {
                 threadCnt += act.threadCnt;
-                allSteps.push_back( function<ICommonAction * (ThreadPool * pPool)>(act) );
+                allSteps.push_back( std::function<ICommonAction * (std::ThreadPool * pPool)>(act) );
             }
         );
-        m_pPool = new ThreadPool(threadCnt); 
+        m_pPool = new std::ThreadPool(threadCnt); 
 
         ICommonAction * preAct = nullptr;
         repos.emplace_back(new ItemRepository());
@@ -221,7 +224,7 @@ CommonActMgr::~CommonActMgr()
     }
 }
 
-int CommonActMgr::feed_data(const vector<void*> &datas)
+int CommonActMgr::feed_data(const std::vector<void*> &datas)
 {
     for(void * data : datas)
     {
@@ -234,7 +237,7 @@ int CommonActMgr::run()
 {
     for(size_t step = 0 ; step < allActs.size(); ++step )
     {
-        thread([this, step](){
+        std::thread([this, step](){
             auto result = allActs[step]->run();
             if( step > currentStep )
             {
@@ -270,8 +273,9 @@ int CommonActMgr::sendResponse(TASK_RESULT res)
     {
         taskResult.datas = out_repo->consumeAllItems();
     }
-
-    UINT8 iRet = ASEND(m_event, (UINT8 *)&taskResult, sizeof(T_TaskResult), m_pid);
+    
+    UINT8 iRet = 0;
+    // UINT8 iRet = ASEND(m_event, (UINT8 *)&taskResult, sizeof(T_TaskResult), m_pid);
 
     return iRet;
 }

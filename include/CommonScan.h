@@ -6,7 +6,7 @@
 class ICommonScan :public ICommonAction
 {
 public:
-    ICommonScan(ThreadPool * pPool, size_t threadCnt_);
+    ICommonScan(size_t threadCnt_, std::ThreadPool * pPool) ;
     ~ICommonScan();
 
     // -- 该函数可能多线程下执行，注意同步
@@ -15,6 +15,9 @@ public:
     std::vector<void *> process(void * data, PROCESS_RESULT &errcode) ;
     // -- 任务停止后，回收未处理的数据
     int recycle(const std::vector<void *> & datas);
+    
+    int queryProgress();
+    int rollback();
 };
 
 #endif

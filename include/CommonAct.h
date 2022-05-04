@@ -16,24 +16,8 @@
 #include <algorithm>
 
 #include "mpmc.h"
-// #include "ThreadPool.h"
-// #include "common_define.h"
-
-// For compile
-typedef int PID;
-typedef int UINT8;
-class ThreadPool
-{
-public:
-    ThreadPool(int threadCnt);
-    template <class F>
-    std::future<int> enqueue(F&& task)
-    {
-        return std::future<int>();
-    }
-};
-int ASEND(int i, UINT8* u, size_t s, PID p);
-
+#include "threadPool.h"
+#include "common.h"
 
 enum class COMMON_ACT_TYPE
 {
@@ -41,38 +25,9 @@ enum class COMMON_ACT_TYPE
     EV_ZIP_ACT_TYPE
 };
 
-// struct T_LibInfo
-// {
-//     std::string szLibId;
-//     std::string szFilePath;
-//     std::list<std::string> lPicInfos;
-//     std::list<std::string> lPicsRowKeys;
-// };
-
-enum class TASK_RESULT
-{
-    SUCCESS = 0,
-    FAILURE_STOP,
-    FAILURE_MEMORY,
-    FAILURE_TASK_NOT_FOUND,
-    FAILURE_UNKNOW,
-
-    TASK_RESULT_NUM
-};
-
-enum class PROCESS_RESULT
-{
-    SUCCESS = 0,
-    FAILURE_MEMORY,
-    FAILURE_UNKNOW,
-
-    PROCESS_RESULT_NUM
-};
-
 struct T_TaskResult
 {
-
-    T_TaskResult(TASK_RESULT r);
+    T_TaskResult(TASK_RESULT r = TASK_RESULT::SUCCESS);
 
     TASK_RESULT result;
     std::string description;
@@ -83,7 +38,7 @@ struct T_TaskResult
 class ICommonAction
 {
 public:
-    ICommonAction(ThreadPool * pPool, size_t threadCnt_);
+    ICommonAction(size_t threadCnt_, std::ThreadPool * pPool);
     ICommonAction(const ICommonAction & cpyICom) = delete;
     ICommonAction &operator=(const ICommonAction &) = delete;
     virtual ~ICommonAction();
@@ -106,7 +61,7 @@ public:
 
     // 线程池是借用的
     size_t threadCnt;
-    ThreadPool * mPool;
+    std::ThreadPool * mPool;
     std::vector<std::future<int> > futs;
 
     // 待处理数据
@@ -146,12 +101,12 @@ public:
 
 private:
 
-    std::vector<std::function<ICommonAction *(ThreadPool * pPool)> > allSteps;
+    std::vector<std::function<ICommonAction *(std::ThreadPool * pPool)> > allSteps;
     std::vector<ICommonAction *> allActs;
     std::atomic<size_t> currentStep;
 
     // 公用线程池
-    ThreadPool *m_pPool;
+    std::ThreadPool *m_pPool;
 
     // 输入 & 输出 井
     std::vector<ItemRepository *> repos;

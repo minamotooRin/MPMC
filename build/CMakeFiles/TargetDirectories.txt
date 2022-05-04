@@ -1,0 +1,3 @@
+/Users/linyouyuan/Documents/github/MPMC/build/CMakeFiles/rebuild_cache.dir
+/Users/linyouyuan/Documents/github/MPMC/build/CMakeFiles/edit_cache.dir
+/Users/linyouyuan/Documents/github/MPMC/build/CMakeFiles/MPMC.dir

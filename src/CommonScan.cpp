@@ -1,24 +1,25 @@
 #include "CommonScan.h"
 
-using namespace std;
-
 /*
 
     ICommonScan
 
 */
 
-ICommonScan::ICommonScan(ThreadPool * pPool, size_t threadCnt_) 
-    : ICommonAction(pPool, threadCnt_)
+ICommonScan::ICommonScan(size_t threadCnt_, std::ThreadPool * pPool) 
+    : ICommonAction(threadCnt_, pPool)
+{
+}
+ICommonScan::~ICommonScan()
 {
 }
 
-vector<void *> ICommonScan::process(void * data, PROCESS_RESULT &errcode)
+std::vector<void *> ICommonScan::process(void * data, PROCESS_RESULT &errcode)
 {
     // -- 该函数可能多线程下执行，注意同步
     // -- 需要释放 data
     // -- 返回多批(含一批)数据，以堆上的指针的形式
-    vector<void *> ans;
+    std::vector<void *> ans;
 
     return ans;
 }
@@ -30,6 +31,17 @@ int ICommonScan::recycle(const std::vector<void *> & datas)
     {
         // delete (T *) data;
     }
+
+    return 0;
+}
+
+int ICommonScan::queryProgress()
+{
+
+    return 0;
+}
+int ICommonScan::rollback()
+{
 
     return 0;
 }
