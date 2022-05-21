@@ -164,7 +164,6 @@ int ICommonAction::deplet()
     return 0;
 }
 /*
-     公用操作管理类
     CommonActMgr
 
 */
